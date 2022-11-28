@@ -1,8 +1,17 @@
 const { request } = require("express");
 const express = require("express");
 const app = express();
+const morgan = require("morgan");
 
 app.use(express.json());
+
+morgan.token("person", function (request, response) {
+	if (request.method === "POST") {
+		return JSON.stringify(request.body);
+	} else return " ";
+});
+
+app.use(morgan(":method :url :response-time :person"));
 
 let persons = [
 	{
@@ -59,16 +68,12 @@ app.delete("/api/persons/:id", (request, response) => {
 });
 
 const generateId = () => {
-	// const maxId = persons.length > 0 ? Math.max(...persons.map((n) => n.id)) : 0;
 	const id = Math.floor(Math.random() * 420000000);
-	// const id = 20;
-	// return maxId + 1;
 	return id;
 };
 
 app.post("/api/persons", (request, response) => {
 	const body = request.body;
-	console.log(body);
 
 	if (!body.name) {
 		return response.status(400).json({
@@ -96,6 +101,12 @@ app.post("/api/persons", (request, response) => {
 	persons = persons.concat(person);
 	response.json(person);
 });
+
+const unknownEndpoint = (request, response) => {
+	response.status(404).send({ error: "unknown endpoint" });
+};
+
+app.use(unknownEndpoint);
 
 const PORT = 3001;
 app.listen(PORT, () => {
